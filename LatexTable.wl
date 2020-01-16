@@ -22,7 +22,7 @@ MathCells::usage = "Specification which cells should be enclosed in $$. Default 
 ColumnAlignment::usage = "Specifies column alignments. Default is \"l\". Give a single value for all columns to be equal. Possible values are \"l\", \"c\" and \"r\". Give a list of rules like {columnNr -> val, ...} to specify special values. A list like {def, {columnNr -> val, ...}} is interpreted like as 'def' is the default value an the second element gives the values for single columns.";
 HeaderAlignment::usage = "Specifies the alignment of the header column. Default is \"c\". Possible values are \"l\", \"c\" and \"r\".";
 ColumnWidthFraction::usage = "Specifies column widths fractions. Default is 1. Give a single value for all columns to be equal. Only numerical values allowed. Give a list of rules like {columnNr -> val, ...} to specify special values. A list like {def, {columnNr -> val, ...}} is interpreted like as 'def' is the default value an the second element gives the values for single columns.";
-TableDividers::usage = "Specifies the dividers drawn. Syntax almost like Dividers like in Grid, but no graphics directives allowed.";
+TableDividers::usage = "Specifies the dividers drawn. Syntax almost like Dividers like in Grid (see ref/Dividers), but no graphics directives allowed.";
 
 LatexTable::inva = "Invalid argument or option `1`.";
 
@@ -40,7 +40,7 @@ Options[LatexTable] = {
 
 LatexAlignmentQ[s_] := s === "l" || s === "c" || s === "r";
 LatexTable[list_, OptionsPattern[]] := ToString[
-  Module[{Dim = Dimensions[list][[1 ;; 2]], columnWidthFraction, columnAlignment, enclosedTable, DividersInterpreter},
+  Module[{Dim = Dimensions[list][[1 ;; 2]], columnWidthFraction, columnAlignment, enclosedTable, DividersInterpreter, ColumnDividers, RowDividers, PrintRowDivider, PrintColumnDivider},
 
     If[Length@Dim < 2, Message[LatexTable::inva, "list"];Abort[]];
     If[Not@LatexAlignmentQ@OptionValue@HeaderAlignment, Message[LatexTable::inva, HeaderAlignment];Abort[]];
@@ -132,12 +132,12 @@ LatexTable[list_, OptionsPattern[]] := ToString[
           Do[divs[[r[[1]]]] = r[[2]], {r, spec}];
           divs
         ],
-        {s:{__}, i_ -> r_} :> Block[{divs},
+        {s : {__}, i_ -> r_} :> Block[{divs},
           divs = DividersInterpreter[s, n];
           divs[[i]] = r;
           divs
         ],
-        {s:{__}, rules:{(_ -> _)..}} :> Block[{divs},
+        {s : {__}, rules : {(_ -> _)..}} :> Block[{divs},
           divs = DividersInterpreter[s, n];
           Do[divs[[r[[1]]]] = r[[2]], {r, rules}];
           divs
@@ -146,32 +146,38 @@ LatexTable[list_, OptionsPattern[]] := ToString[
       }
     ];
 
-    Echo@DividersInterpreter[OptionValue[TableDividers][[1]], Dim[[1]]];
-    Echo@DividersInterpreter[OptionValue[TableDividers][[2]], Dim[[2]]];
+    RowDividers = DividersInterpreter[OptionValue[TableDividers][[1]], Dim[[1]] + 1];
+    PrintRowDivider[i_] := If[RowDividers[[i]], "\t\\hline\n", ""];
+    ColumnDividers = DividersInterpreter[OptionValue[TableDividers][[2]], Dim[[2]] + 1];
+    PrintColumnDivider[i_] := If[ColumnDividers[[i]], "|", ""];
 
     StringForm[
-      "\\begin{tabu} to `1` {`2`}\n\t\\hline\n`3`\t\\hline\n`4`\t\\hline\n\\end{tabu}",
+      "\\begin{tabu} to `1` {`2`}\n`3``4`\\end{tabu}",
+
       OptionValue@TableWidth,
+
       StringJoin[
-        Table["X[" <> ToString@columnWidthFraction[[i]] <> "," <> columnAlignment[[i]] <> "]", {i, Dim[[2]]}]
-      ],
-      "\t\\rowfont[" <> OptionValue@HeaderAlignment <> "]{}" <> StringJoin[
+        Table[PrintColumnDivider[i] <> "X[" <> ToString@columnWidthFraction[[i]] <> "," <> columnAlignment[[i]] <> "]", {i, Dim[[2]]}]
+      ] <> PrintColumnDivider[-1],
+
+      PrintRowDivider[1] <> "\t\\rowfont[" <> OptionValue@HeaderAlignment <> "]{}" <> StringJoin[
         Table[
           e <> " & ",
           {e, enclosedTable[[1, 1 ;; -2]]}
         ]
       ] <> enclosedTable[[1, -1]] <> " \\\\\n",
+
       StringJoin[
         Table[
-          "\t" <> StringJoin[
+          PrintRowDivider[i] <> "\t" <> StringJoin[
             Table[
               e <> " & ",
-              {e, r[[1 ;; -2]]}
+              {e, enclosedTable[[i, 1 ;; -2]]}
             ]
-          ] <> r[[-1]] <> " \\\\\n",
-          {r, enclosedTable[[2 ;;]]}
+          ] <> enclosedTable[[i, -1]] <> " \\\\\n",
+          {i, 2, Length@enclosedTable}
         ]
-      ]
+      ] <> PrintRowDivider[-1]
     ]
   ],
   StandardForm
