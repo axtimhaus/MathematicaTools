@@ -2,10 +2,14 @@
 (* ::Package:: *)
 
 Print["Installing latest *.wl files to ", FileNameJoin[{$UserBaseDirectory, "Applications"}]];
-SetDirectory[NotebookDirectory[]];
+Print["Current working directory is ", Directory[]];
 files = FileNames["*.wl"];
-Print @ TableForm @ files;
-Do[CopyFile[file, FileNameJoin[{$UserBaseDirectory, "Applications", file}], OverwriteTarget->True], {file, files}];
+Do[
+  Print["Installing ", file];
+  CopyFile[file, FileNameJoin[{$UserBaseDirectory, "Applications", file}], OverwriteTarget -> True],
+  {file, files}
+];
+Print["Finished."]
 
 
 
