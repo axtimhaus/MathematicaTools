@@ -18,8 +18,8 @@ BeginPackage["DumpFile`"];
 DumpFile::usage = "DumpFile[name_] - Gives the path to a dump file like \"NotebookDirectory/dmp/NotebookFileName/name\".";
 
 Begin["`Private`"];
-DumpFile[name_] := Module[{Dir},
-  Dir = FileNameJoin@{NotebookDirectory[], "dmp", Last@FileNameSplit@NotebookFileName[]};
+DumpFile[name_, subdir_:""] := Module[{Dir},
+  Dir = FileNameJoin@{NotebookDirectory[], "dmp", Last@FileNameSplit@NotebookFileName[], subdir};
   If[Not@DirectoryQ@Dir, CreateDirectory@Dir];
 
   FileNameJoin@{Dir, name}
