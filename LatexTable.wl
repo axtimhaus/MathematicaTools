@@ -67,7 +67,7 @@ LatexTable[list_, OptionsPattern[]] := ToString[
       Table[OptionValue@ColumnWidthFraction, Dim[[2]]],
 
       {__?(MatchQ[#, _Integer -> _?NumericQ] &)},
-      With[{asso = Association@OptionValue@ColumnWidthFraction}, Table[If[MissingQ[asso@i], "l", asso@i] , {i, Dim[[2]]}]],
+      With[{asso = Association@OptionValue@ColumnWidthFraction}, Table[If[MissingQ[asso@i], 1, asso@i] , {i, Dim[[2]]}]],
 
       {_?NumericQ, {__?(MatchQ[#, _Integer -> _?NumericQ] &)}},
       With[{def = OptionValue[ColumnWidthFraction][[1]], asso = Association@OptionValue[ColumnWidthFraction][[2]]}, Table[If[MissingQ[asso@i], def, asso@i ], {i, Dim[[2]]}]],
